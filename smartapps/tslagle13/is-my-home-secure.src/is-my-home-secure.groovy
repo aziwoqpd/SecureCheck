@@ -60,7 +60,7 @@ preferences {
 		input "contacts", "capability.contactSensor", title: "Which door(s)?", multiple: true, required: true
         input "locks", "capability.lock", title: "Which lock?", multiple: true, required: false
         input "contactsNonSecure", "capability.contactSensor", title: "These doors/windows should be checked but do not effect security.", multiple: true, required: false
-        
+        input "switches", "capability.switch", title: "Which switch(es)?", multiple: true, required: false
     }
     section("When should I check? (once per day)") {
     	input "timeToCheck", "time", title: "When?(Optional)", required: false
@@ -143,24 +143,14 @@ log.debug("checkDoor")
     def openContacts = contacts.findAll { it?.latestValue("contact") == 'open' }
     def openLocks = locks.findAll { it?.latestValue("lock") == 'unlocked' }
     def openContactsNonSecure = contactsNonSecure.findAll { it?.latestValue("contact") == 'open' }
+    def switchesOn = switches.findAll { it?.latestValue("switch") == 'on' }
 
-   	if (openContacts || openLocks){
-    	if (openContacts && openLocks){
-    		def message = "ALERT: ${openContacts.join(', ')} and ${openLocks.join(', ')} are unsecure!"
-            sendUnsecure(message)
+   	if (openContacts || openLocks || switchesOn) {
+        def message = "ALERT: ${openContacts.join(', ')} ${openLocks.join(', ')} ${switchesOn.join(', ')} are still open/on!"
+        sendUnsecure(message)
 
-            if (lockAuto != "No"){
-            	lockDoors()
-            }
-        }
-        else {
-    		def message = "ALERT: ${openContacts.join(', ')} ${openLocks.join(', ')} unsecure!"
-            sendUnsecure(message)
-
-            if (lockAuto != "No"){
-            	lockDoors()
-            }    
-
+        if (lockAuto != "No"){
+            lockDoors()
         }
     }
 
@@ -292,13 +282,3 @@ private getTimeIntervalLabel()
 private hideOptionsSection() {
 	(starting || ending || days || modes) ? false : true
 }
-
-
-
-
-
-
-
-
-
-
