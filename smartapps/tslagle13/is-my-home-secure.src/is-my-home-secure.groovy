@@ -74,13 +74,12 @@ preferences {
     section("Add SMS alerts?"){
     input "phone", "phone", title: "Phone number (For SMS - Optional)", required: false
 	input "pushAndPhone", "enum", title: "Send push message too?", required: false, options: ["Yes","No"]
-        
+    input "jsonPush", "text", title: "Json push target", required: false
 	}
     section("Settings"){
 		input "sendPushUnsecure", "enum", title: "Send a SMS/push notification when home is unsecure?", metadata:[values:["Yes","No"]], required:true
         input "sendPushSecure", "enum", title: "Send a SMS/push notification when house is secure?", metadata:[values:["Yes","No"]], required:true
         input "lockAuto", "enum", title: "Lock door(s) automatically if found unsecure?", metadata:[values:["Yes","No"]], required:false
-        input "recipients", "contact", title: "Send notifications to", multiple: true
     }
     section(title: "More options", hidden: hideOptionsSection()) {
 			input "days", "enum", title: "Only on certain days of the week", multiple: true, required: false,
@@ -177,7 +176,11 @@ if(allOk){
     		log.debug("Sending push message")
     		if (!phone || pushAndPhone != "No") {
 				log.debug "sending push"
-				sendNotificationToContacts("${openLocks.join(', ')} now locked.  You're welcome.  Enjoy your day.", recipients)
+                if (jsonPush != "") {
+                    httpPostJson("https://umeboshi.lfx.org/v1/users/" + jsonPush + ":send", "{\"message\":\"${openLocks.join(', ')} now locked.  You're welcome.  Enjoy your day.\"}") {}
+                } else {
+					sendNotification("${openLocks.join(', ')} now locked.  You're welcome.  Enjoy your day.")
+                }
 			}
 			if (phone) {
 				log.debug "sending SMS"
@@ -194,7 +197,11 @@ log.debug("checking push")
   if(sendPushSecure != "No"){
     if (!phone || pushAndPhone != "No") {
 		log.debug "sending push"
-		sendNotificationToContacts(msg, recipients)
+        if (jsonPush != "") {
+          httpPostJson("https://umeboshi.lfx.org/v1/users/" + jsonPush + ":send", "{\"message\":\"${msg}\"}") {}
+        } else {
+          sendNotification(msg)
+        }
 	}
 	if (phone) {
 		log.debug "sending SMS"
@@ -215,7 +222,11 @@ log.debug("checking push")
     log.debug("Sending push message")
     if (!phone || pushAndPhone != "No") {
 		log.debug "sending push"
-		sendNotificationToContacts(msg, recipients)
+		if (jsonPush != "") {
+          httpPostJson("https://umeboshi.lfx.org/v1/users/" + jsonPush + ":send", "{\"message\":\"${msg}\"}") {}
+        } else {
+          sendNotification(msg)
+        }
 	}
 	if (phone) {
 		log.debug "sending SMS"
